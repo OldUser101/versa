@@ -6,11 +6,11 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(include)
 
-file(GLOB_RECURSE LIBVERSA_SOURCES src/lib/*.cpp src/lib/*.c)
+file(GLOB_RECURSE LIBVERSA_SOURCES src/libversa/*.cpp)
 
 add_library(libversa STATIC ${LIBVERSA_SOURCES})
 
-file(GLOB_RECURSE CLI_SOURCES src/cli/*.cpp)
+file(GLOB_RECURSE CLI_SOURCES src/versa/*.cpp)
 add_executable(versa ${CLI_SOURCES})
 
 target_link_libraries(versa PRIVATE libversa)
