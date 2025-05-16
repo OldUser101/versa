@@ -1,0 +1,6 @@
+[submodule "extern/BLAKE3"]
+	path = extern/BLAKE3
+	url = https://github.com/BLAKE3-team/BLAKE3/
+[submodule "extern/zstd"]
+	path = extern/zstd
+	url = https://github.com/facebook/zstd
