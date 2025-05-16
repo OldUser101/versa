@@ -5,8 +5,14 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <cstdint>
+#include <iomanip>
 
 #include <libversa/Repo.h>
+
 #include <versa/ConsoleLogger.h>
 
 namespace versa {

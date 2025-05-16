@@ -4,7 +4,9 @@
 
 #pragma once
 
-#define VERSA_TRY(expr) ({ auto _res = (expr); if (!_res.ok()) return res; _res.value; })
+#define VERSA_TRY(expr) ({ auto _res = (expr); if (!_res.ok()) return _res; _res.value; })
+
+#include <string>
 
 namespace libversa {
 

@@ -25,18 +25,21 @@ void ConsoleLogger::log(std::string msg, libversa::ErrorLevel l) {
     std::string errorType;
 
     switch(l) {
+        case libversa::NONE:
+            errorType = "";
+            break;
         case libversa::INFO:
-            errorType = "[" + VERSA_COLOR_INFO + "INFO" + VERSA_COLOR_RESET + "]";
+            errorType = "[" + VERSA_COLOR_INFO + "INFO" + VERSA_COLOR_RESET + "] ";
             break;
         case libversa::WARN:
-            errorType = "[" + VERSA_COLOR_WARN + "WARN" + VERSA_COLOR_RESET + "]";
+            errorType = "[" + VERSA_COLOR_WARN + "WARN" + VERSA_COLOR_RESET + "] ";
             break;
         case libversa::ERROR:
-            errorType = "[" + VERSA_COLOR_ERROR + "ERROR" + VERSA_COLOR_RESET + "]";
+            errorType = "[" + VERSA_COLOR_ERROR + "ERROR" + VERSA_COLOR_RESET + "] ";
             break;
         default:
             return;
     }
 
-    std::cout << errorType << " " << msg << std::endl;
+    std::cout << errorType << msg << std::endl;
 }

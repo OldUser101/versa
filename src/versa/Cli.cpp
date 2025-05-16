@@ -2,13 +2,15 @@
 // VERSA – A fast, branchless version control system
 // Copyright (C) 2025 Nathan Gill
 
-#include <iostream>
-#include <vector>
-#include <string>
-
 #include <versa/Cli.h>
 
+#include <libversa/Result.h>
+#include <libversa/Hash.h>
+#include <libversa/Object.h>
+#include <libversa/Util.h>
+
 using namespace versa;
+using namespace libversa;
 
 Cli::Cli(int argc, char* argv[]) {
     if (argc < 2) {
@@ -23,14 +25,29 @@ Cli::Cli(int argc, char* argv[]) {
     }
 
     if (args[1] == "init") {
-        libversa::Result<bool> r = this->repo.init();
+        Result<bool> r = this->repo.init();
         if (!r.ok()) {
-            this->logger.log(r.msg, libversa::ERROR);
+            this->logger.log(r.msg, ERROR);
             this->exitCode = 1;
             return;
         }
+    } else if (args[1] == "hash-object") {
+        Result<std::vector<uint8_t>> r = Util::read_file(argv[2]);
+        if (!r.ok()) {
+            this->logger.log(r.msg, ERROR);
+            this->exitCode = 1;
+            return;          
+        }
+
+        Blob obj = Blob(r.value);
+        Blake3Hash hash = obj.hash_blake3();
+
+        for (auto byte : hash) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte;
+        }
+        std::cout << std::dec << '\n';
     } else {
-        this->logger.log("Unknown subcommand '" + args[1] + "'", libversa::ERROR);
+        this->logger.log("Unknown subcommand '" + args[1] + "'", ERROR);
         this->exitCode = 1;
         return;        
     }

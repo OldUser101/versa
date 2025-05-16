@@ -15,8 +15,15 @@ Result<bool> Repo::init() {
         return Result<bool>::failure("A VERSA repository already exists in this directory.");
     }
 
-    return Result<bool>::from(
-        std::filesystem::create_directory("./.versa"),
-        "Failed to create directory '.versa'."
-    );
+    if (!std::filesystem::create_directory("./.versa")) {
+        return Result<bool>::failure("Failed to create directory '.versa'.");
+    }
+
+    if (!std::filesystem::create_directory("./.versa/objects")) {
+        return Result<bool>::failure("Failed to create directory '.versa/objects'.");
+    }
+
+    this->logger.log("Created an empty VERSA repository in the current directory.", INFO);
+
+    return Result<bool>::success(true);
 }

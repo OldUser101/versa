@@ -9,6 +9,7 @@
 namespace libversa {
 
 enum ErrorLevel {
+    NONE,
     INFO,
     WARN,
     ERROR
