@@ -41,11 +41,15 @@ Cli::Cli(int argc, char* argv[]) {
 
         Blob obj = Blob(r.value);
         Blake3Hash hash = obj.hash_blake3();
+        std::string hashStr = Util::hash_to_string(hash);
+        std::cout << hashStr << std::endl;
 
-        for (auto byte : hash) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte;
+        Result<bool> r2 = obj.hash_object();
+        if (!r2.ok()) {
+            this->logger.log(r2.msg, ERROR);
+            this->exitCode = 1;
+            return;
         }
-        std::cout << std::dec << '\n';
     } else {
         this->logger.log("Unknown subcommand '" + args[1] + "'", ERROR);
         this->exitCode = 1;

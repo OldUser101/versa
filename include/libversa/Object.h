@@ -7,6 +7,9 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <filesystem>
+
+#include <libversa/Result.h>
 
 namespace libversa {
 
@@ -28,6 +31,8 @@ public:
 
     ObjectType get_type() const;
     Blake3Hash hash_blake3() const;
+    Result<bool> hash_object() const;
+    Result<std::string> make_object_path() const;
 
     virtual std::vector<uint8_t> serialize() const = 0;
 };

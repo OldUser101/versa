@@ -24,3 +24,11 @@ Result<std::vector<uint8_t>> Util::read_file(std::string path) {
 
     return Result<std::vector<uint8_t>>::success(buffer);
 }
+
+std::string Util::hash_to_string(Blake3Hash hash) {
+    std::ostringstream oss;
+    for (uint8_t byte: hash) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+    }
+    return oss.str();
+}
