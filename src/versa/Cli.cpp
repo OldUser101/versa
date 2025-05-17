@@ -29,9 +29,18 @@ Cli::Cli(int argc, char* argv[]) {
         if (!r.ok()) {
             this->logger.log(r.msg, ERROR);
             this->exitCode = 1;
-            return;
         }
-    } else if (args[1] == "hash-object") {
+        return;
+    }
+
+    Result<bool> rOpen = this->repo.open_repo("./");
+    if (!rOpen.ok()) {
+        this->logger.log("The current directory does not contain a VERSA repository.", ERROR);
+        this->exitCode = 1;
+        return;         
+    }
+    
+    if (args[1] == "hash-object") {
         Result<std::vector<uint8_t>> r = Util::read_file(argv[2]);
         if (!r.ok()) {
             this->logger.log(r.msg, ERROR);
@@ -39,24 +48,20 @@ Cli::Cli(int argc, char* argv[]) {
             return;          
         }
 
-        Blob obj = Blob(r.value);
-        Blake3Hash hash = obj.hash_blake3();
-        std::string hashStr = Util::hash_to_string(hash);
-        std::cout << hashStr << std::endl;
-
-        Result<bool> r2 = obj.hash_object();
+        Blob bObj = Blob(r.value);
+        Object obj = bObj.to_object();
+        
+        Result<bool> r2 = this->repo.hash_object(obj, true);
         if (!r2.ok()) {
             this->logger.log(r2.msg, ERROR);
-            this->exitCode = 1;
-            return;
+            this->exitCode = 1;      
         }
-    } else {
-        this->logger.log("Unknown subcommand '" + args[1] + "'", ERROR);
-        this->exitCode = 1;
-        return;        
-    }
 
-    this->exitCode = 0;
+        return;
+    } 
+
+    this->logger.log("Unknown subcommand '" + args[1] + "'", ERROR);
+    this->exitCode = 1;
 }
 
 int Cli::get_exit_code() {

@@ -19,31 +19,38 @@ enum ObjectType {
     BLOB,
     TREE,
     COMMIT,
-    TAG
+    VIEW
 };
 
 class Object {
+private:
+    ObjectType type;
+    std::vector<uint8_t> data;
+public:
+    Object(ObjectType t, std::vector<uint8_t> data): type(t), data(data) {}
+
+    ObjectType get_type();
+    Blake3Hash hash_blake3();
+
+    std::vector<uint8_t> serialize();
+};
+
+class ObjectContent {
 protected:
     ObjectType type;
 public:
-    explicit Object(ObjectType t): type(t) {}
-    virtual ~Object() = default;
+    explicit ObjectContent(ObjectType t): type(t) {};
 
-    ObjectType get_type() const;
-    Blake3Hash hash_blake3() const;
-    Result<bool> hash_object() const;
-    Result<std::string> make_object_path() const;
-
-    virtual std::vector<uint8_t> serialize() const = 0;
+    virtual Object to_object() const = 0;
 };
 
-class Blob: public Object {
+class Blob: public ObjectContent {
 private:
     std::vector<uint8_t> data;
 public:
-    explicit Blob(const std::vector<uint8_t>& d) : Object(ObjectType::BLOB), data(d) {}
+    Blob(const std::vector<uint8_t>& d) : ObjectContent(ObjectType::BLOB), data(d) {}
 
-    std::vector<uint8_t> serialize() const override;
+    Object to_object() const override;
 };
 
 };

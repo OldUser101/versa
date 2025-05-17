@@ -19,7 +19,7 @@ using Blake3Hash = std::vector<uint8_t>;
 
 class Hash {
 public:
-    static Blake3Hash hash_object_blake3(const Object& object);
+    static Blake3Hash hash_object_blake3(Object& object);
 };
 
 };

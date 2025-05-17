@@ -6,7 +6,7 @@
 
 using namespace libversa;
 
-Blake3Hash Hash::hash_object_blake3(const Object& object) {
+Blake3Hash Hash::hash_object_blake3(Object& object) {
     std::vector<uint8_t> data = object.serialize();
 
     blake3_hasher hasher;

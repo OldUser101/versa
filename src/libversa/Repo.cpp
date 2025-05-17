@@ -5,12 +5,19 @@
 #include <filesystem>
 
 #include <libversa/Repo.h>
+#include <libversa/Util.h>
+#include <libversa/Compress.h>
+
+#define VERSA_OBJ_PREFIX_LEN 2
 
 using namespace libversa;
 
-Repo::Repo(Logger& logger): logger(logger) {}
+Repo::Repo(Logger& logger): logger(logger) {
+    this->currentRepo = "";
+}
 
 Result<bool> Repo::init() {
+
     if (std::filesystem::exists("./.versa")) {
         return Result<bool>::failure("A VERSA repository already exists in this directory.");
     }
@@ -26,4 +33,80 @@ Result<bool> Repo::init() {
     this->logger.log("Created an empty VERSA repository in the current directory.", INFO);
 
     return Result<bool>::success(true);
+}
+
+Result<bool> Repo::open_repo(std::string directory) {
+    std::filesystem::path repoDir = directory;
+    repoDir /= ".versa";
+
+    if (!std::filesystem::exists(repoDir)) {
+        return Result<bool>::failure("A VERSA repository does not exist in '" + directory + "'.");
+    }
+
+    this->currentRepo = repoDir;
+    return Result<bool>::success(true);
+}
+
+Result<bool> Repo::hash_object(Object& obj, bool writeOut) {
+    if (this->currentRepo == "") {
+        return Result<bool>::failure("No VERSA repository has been opened.");
+    }
+
+    Blake3Hash hash = obj.hash_blake3();
+    this->logger.log(Util::hash_to_string(hash), NONE);
+
+    if (!writeOut) {
+        return Result<bool>::success(true);
+    }
+
+    Result<std::filesystem::path> rObjPath = this->make_object_path(obj);
+    if (!rObjPath.ok()) {
+        return Result<bool>::failure(rObjPath.msg);
+    }
+
+    std::filesystem::path objPath = rObjPath.value;
+    std::vector<uint8_t> data = obj.serialize();
+
+    Result<std::vector<uint8_t>> compressedDataResult = Compress::compress_bytes(data);
+
+    if (!compressedDataResult.ok()) {
+        return Result<bool>::failure(compressedDataResult.msg);
+    }
+
+    std::vector<uint8_t> compressedData = compressedDataResult.value;
+
+    std::ofstream objectFile;
+    objectFile.open(objPath, std::ios::binary | std::ios::out);
+
+    if (!objectFile.is_open()) {
+        return Result<bool>::failure("Error opening file '" + objPath.string() + "' in write mode.");
+    }
+
+    objectFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size());
+    if (!objectFile) {
+        return Result<bool>::failure("Error writing file '" + objPath.string() + "'");
+    }
+
+    objectFile.close();
+
+    return Result<bool>::success(true);
+}
+
+Result<std::filesystem::path> Repo::make_object_path(Object& obj) {
+    Blake3Hash hash = obj.hash_blake3();
+    std::string hashStr = Util::hash_to_string(hash);
+
+    std::filesystem::path targetDir = this->currentRepo;
+    targetDir /= "objects";
+    targetDir /= hashStr.substr(0, VERSA_OBJ_PREFIX_LEN);
+
+    this->logger.log(targetDir.string(), NONE);
+
+    if (!std::filesystem::exists(targetDir)) {
+        if (!std::filesystem::create_directories(targetDir)) {
+            return Result<std::filesystem::path>::failure("Error creating directory '" + targetDir.string() + "'.");
+        }
+    }
+
+    return Result<std::filesystem::path>::success(targetDir / hashStr.substr(VERSA_OBJ_PREFIX_LEN));
 }

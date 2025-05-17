@@ -21,7 +21,7 @@ class Cli {
 private:
     ConsoleLogger logger = ConsoleLogger(false);
     libversa::Repo repo = libversa::Repo(this->logger);
-    int exitCode;
+    int exitCode = 0;
 public:
     Cli(int argc, char* argv[]);
     int get_exit_code();
