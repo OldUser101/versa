@@ -64,7 +64,7 @@ Result<bool> Repo::hash_object(Object& obj, bool writeOut) {
         return Result<bool>::failure(rObjPath.msg);
     }
 
-    std::filesystem::path objPath = rObjPath.value;
+    std::filesystem::path objPath = rObjPath.get();
     std::vector<uint8_t> data = obj.serialize();
 
     Result<std::vector<uint8_t>> compressedDataResult = Compress::compress_bytes(data);
@@ -73,7 +73,7 @@ Result<bool> Repo::hash_object(Object& obj, bool writeOut) {
         return Result<bool>::failure(compressedDataResult.msg);
     }
 
-    std::vector<uint8_t> compressedData = compressedDataResult.value;
+    std::vector<uint8_t> compressedData = compressedDataResult.get();
 
     std::ofstream objectFile;
     objectFile.open(objPath, std::ios::binary | std::ios::out);
@@ -100,8 +100,6 @@ Result<std::filesystem::path> Repo::make_object_path(Object& obj) {
     targetDir /= "objects";
     targetDir /= hashStr.substr(0, VERSA_OBJ_PREFIX_LEN);
 
-    this->logger.log(targetDir.string(), NONE);
-
     if (!std::filesystem::exists(targetDir)) {
         if (!std::filesystem::create_directories(targetDir)) {
             return Result<std::filesystem::path>::failure("Error creating directory '" + targetDir.string() + "'.");
@@ -110,3 +108,59 @@ Result<std::filesystem::path> Repo::make_object_path(Object& obj) {
 
     return Result<std::filesystem::path>::success(targetDir / hashStr.substr(VERSA_OBJ_PREFIX_LEN));
 }
+
+Result<std::filesystem::path> Repo::get_object_path(std::string id) {
+    std::filesystem::path target = this->currentRepo;
+    target /= "objects";
+    target /= id.substr(0, VERSA_OBJ_PREFIX_LEN);
+    target /= id.substr(VERSA_OBJ_PREFIX_LEN);
+
+    if (!std::filesystem::exists(target)) {
+        return Result<std::filesystem::path>::failure("Invalid object ID '" + id + "'.");
+    }
+
+    return Result<std::filesystem::path>::success(target);
+}
+
+Result<std::unique_ptr<ObjectContent>> Repo::cat_file(ObjectType type, std::string objId) {
+    if (this->currentRepo == "") {
+        return Result<std::unique_ptr<ObjectContent>>::failure("No VERSA repository has been opened.");
+    }
+    
+    Result<std::filesystem::path> rObjPath = this->get_object_path(objId);
+    if (!rObjPath.ok()) {
+        return Result<std::unique_ptr<ObjectContent>>::failure(rObjPath.msg);
+    }
+
+    std::filesystem::path objPath = rObjPath.get();
+
+    std::ifstream objectFile;
+    objectFile.open(objPath, std::ios::binary | std::ios::in);
+
+    if (!objectFile.is_open()) {
+        return Result<std::unique_ptr<ObjectContent>>::failure("Error opening file '" + objPath.string() + "' in read mode.");
+    }
+
+    size_t fSize = std::filesystem::file_size(objPath);
+
+    std::vector<uint8_t> cBuf(fSize);
+    objectFile.read(reinterpret_cast<char*>(cBuf.data()), cBuf.size());
+    if (!objectFile) {
+        return Result<std::unique_ptr<ObjectContent>>::failure("Error reading file '" + objPath.string() + "'");
+    }
+
+    Result<std::vector<uint8_t>> rDData = Compress::decompress_bytes(cBuf);
+    if (!rDData.ok()) {
+        return Result<std::unique_ptr<ObjectContent>>::failure(rDData.msg);
+    }
+
+    std::vector<uint8_t> dData = rDData.get();
+    Object obj = Object(type, dData);
+    
+    Result<std::unique_ptr<ObjectContent>> rObjContent = obj.deserialize();
+    if (!rObjContent.ok()) {
+        return Result<std::unique_ptr<ObjectContent>>::failure(rObjContent.msg);
+    }
+
+    return Result<std::unique_ptr<ObjectContent>>::success(std::move(rObjContent.get()));
+} 

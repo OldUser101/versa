@@ -47,6 +47,38 @@ std::vector<uint8_t> Object::serialize() {
     return result;
 }
 
+Result<std::unique_ptr<ObjectContent>> Object::deserialize() {
+    auto nullPos = std::find(this->data.begin(), this->data.end(), '\0');
+    if (nullPos == this->data.end()) {
+        return Result<std::unique_ptr<ObjectContent>>::failure("Invalid or corrupt object data.");
+    }
+
+    std::string header(this->data.begin(), nullPos);
+    std::istringstream headerStream(header);
+    std::string typeStr;
+    size_t size;
+
+    headerStream >> typeStr >> size;
+    auto contentStart = nullPos + 1;
+
+    if (data.end() - contentStart != static_cast<ptrdiff_t>(size)) {
+        return Result<std::unique_ptr<ObjectContent>>::failure("Invalid or corrupt object data.");
+    }
+
+    std::vector<uint8_t> content(contentStart, data.end());
+
+    if (typeStr == "blob" && this->type == BLOB) {
+        return Result<std::unique_ptr<ObjectContent>>::success(std::make_unique<Blob>(content));
+    }
+
+    return Result<std::unique_ptr<ObjectContent>>::failure("Invalid or corrupt object data.");
+}
+
 Object Blob::to_object() const {
     return Object(this->type, this->data);
+}
+
+void Blob::print() const {
+    std::cout.write(reinterpret_cast<const char*>(this->data.data()), this->data.size());
+    std::cout.flush();
 }

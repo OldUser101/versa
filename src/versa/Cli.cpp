@@ -48,7 +48,7 @@ Cli::Cli(int argc, char* argv[]) {
             return;          
         }
 
-        Blob bObj = Blob(r.value);
+        Blob bObj = Blob(r.get());
         Object obj = bObj.to_object();
         
         Result<bool> r2 = this->repo.hash_object(obj, true);
@@ -58,7 +58,19 @@ Cli::Cli(int argc, char* argv[]) {
         }
 
         return;
-    } 
+    } else if (args[1] == "cat-file") {
+        Result<std::unique_ptr<ObjectContent>> rContent = this->repo.cat_file(libversa::BLOB, args[2]);
+        if (!rContent.ok()) {
+            this->logger.log(rContent.msg, ERROR);
+            this->exitCode = 1;
+            return;          
+        }
+
+        std::unique_ptr<ObjectContent> content = std::move(rContent.get());
+        content->print();
+
+        return;
+    }
 
     this->logger.log("Unknown subcommand '" + args[1] + "'", ERROR);
     this->exitCode = 1;

@@ -16,6 +16,7 @@ namespace libversa {
 class Compress {
 public:
     static Result<std::vector<uint8_t>> compress_bytes(std::vector<uint8_t> bytes);
+    static Result<std::vector<uint8_t>> decompress_bytes(std::vector<uint8_t> bytes);
 };
 
 };

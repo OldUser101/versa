@@ -20,11 +20,14 @@ private:
     Logger& logger;
     std::string currentRepo;
     Result<std::filesystem::path> make_object_path(Object& obj);
+    Result<std::filesystem::path> get_object_path(std::string id);
+
 public:
     Repo(Logger& logger);
     Result<bool> init();
     Result<bool> open_repo(std::string directory);
     Result<bool> hash_object(Object& obj, bool writeOut);
+    Result<std::unique_ptr<ObjectContent>> cat_file(ObjectType type, std::string objId);
 };
 
 };
